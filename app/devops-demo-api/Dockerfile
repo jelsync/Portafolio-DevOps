@@ -5,7 +5,7 @@ RUN mvn --batch-mode dependency:go-offline
 COPY src src
 RUN mvn --batch-mode clean package
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 ARG APP_VERSION=0.1.0-SNAPSHOT
 ENV APP_VERSION=${APP_VERSION}
 RUN addgroup -S app && adduser -S -G app -u 10001 app
