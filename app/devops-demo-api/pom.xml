@@ -17,7 +17,7 @@
     <java.version>17</java.version>
     <maven.compiler.release>17</maven.compiler.release>
     <tomcat.version>10.1.55</tomcat.version>
-    <dependency-check.version>12.1.1</dependency-check.version>
+    <dependency-check.version>13.0.0</dependency-check.version>
   </properties>
   <dependencies>
     <dependency>
