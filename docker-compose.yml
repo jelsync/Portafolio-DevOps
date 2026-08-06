@@ -1,0 +1,61 @@
+name: jenkins-devsecops-platform
+
+services:
+  jenkins:
+    build:
+      context: ./jenkins
+    image: local/jenkins-devsecops:lts-jdk17
+    container_name: devsecops-jenkins
+    restart: unless-stopped
+    user: root
+    environment:
+      CASC_JENKINS_CONFIG: /var/jenkins_home/casc/jenkins.yaml
+      JAVA_OPTS: -Djenkins.install.runSetupWizard=false
+      JENKINS_ADMIN_ID: ${JENKINS_ADMIN_ID:?Set JENKINS_ADMIN_ID in .env}
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?Set JENKINS_ADMIN_PASSWORD in .env}
+      GIT_REPOSITORY_URL: ${GIT_REPOSITORY_URL:-https://github.com/jelsync/Portafolio-DevOps.git}
+      GHCR_IMAGE: ${GHCR_IMAGE:-ghcr.io/jelsync/devops-demo-api}
+    ports:
+      - "${JENKINS_HTTP_PORT:-8081}:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./jenkins/casc:/var/jenkins_home/casc:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - devsecops
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/login >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  app:
+    profiles: ["app"]
+    build:
+      context: ./app/devops-demo-api
+      args:
+        APP_VERSION: ${APP_VERSION:-0.1.0-SNAPSHOT}
+    image: local/devops-demo-api:${APP_VERSION:-0.1.0-SNAPSHOT}
+    container_name: devops-demo-api
+    restart: unless-stopped
+    ports:
+      - "${APP_HTTP_PORT:-8080}:8080"
+    networks:
+      - devsecops
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+networks:
+  devsecops:
+    name: devsecops-platform
+
+volumes:
+  jenkins_home:
+    name: devsecops-jenkins-home
+

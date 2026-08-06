@@ -1,0 +1,45 @@
+jenkins:
+  systemMessage: "Jenkins DevSecOps Platform - managed with JCasC"
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_ID}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+unclassified:
+  location:
+    url: "http://localhost:8081/"
+  globalLibraries: {}
+
+jobs:
+  - script: >
+      pipelineJob('jenkins-devsecops-platform') {
+        description('Pipeline declarativo del portafolio. Gestionado por JCasC/Job DSL.')
+        parameters {
+          booleanParam('PUBLISH_IMAGE', false, 'Publicar en GHCR (requiere credencial ghcr-credentials)')
+          booleanParam('DEPLOY_LOCAL', true, 'Desplegar el contenedor localmente')
+          booleanParam('RUN_SECURITY_SCAN', true, 'Ejecutar Gitleaks, Trivy y Dependency-Check')
+          stringParam('IMAGE_TAG', '', 'Tag opcional; vacío usa BUILD_NUMBER-SHA')
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url(System.getenv('GIT_REPOSITORY_URL')) }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
